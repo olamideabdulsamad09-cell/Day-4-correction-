@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delete Project Modal</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 45px;
+      font-family: Arial, sans-serif;
+      background: white;
+      color: #202124;
+    }
+
+    /* Open button */
+    .open-btn {
+      background: #2864e8;
+      color: white;
+      border: none;
+      padding: 26px 30px;
+      border-radius: 18px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #111;
+      outline-offset: 3px;
+    }
+
+    /* Background overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    /* Modal box */
+    .modal {
+      background: white;
+      width: 100%;
+      max-width: 400px;
+      padding: 28px;
+      border-radius: 16px;
+      box-shadow: 0 15px 50px #0002;
+      animation: appear 0.2s ease;
+    }
+
+    .modal h2 {
+      margin: 0 0 12px;
+      font-size: 23px;
+    }
+
+    .modal p {
+      color: #5f6368;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    /* Modal buttons */
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .actions button {
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .cancel-btn {
+      background: white;
+      color: #2864e8;
+      border: 1px solid #dadce0;
+    }
+
+    .delete-btn {
+      background: #2864e8;
+      color: white;
+      border: 1px solid #2864e8;
+    }
+
+    .status {
+      margin-top: 25px;
+      color: #188038;
+      font-size: 16px;
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <button class="open-btn" id="openBtn">
+    Delete project
+  </button>
+
+  <p class="status" id="status" aria-live="polite"></p>
+
+  <!-- Modal overlay -->
+  <div class="overlay" id="overlay">
+    <section
+      class="modal"
+      id="modal"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+      aria-describedby="modalDescription"
+      tabindex="-1"
+    >
+      <h2 id="modalTitle">Delete project?</h2>
+
+      <p id="modalDescription">
+        Are you sure you want to delete this project?
+        This action cannot be undone.
+      </p>
+
+      <div class="actions">
+        <button class="cancel-btn" id="cancelBtn">
+          Cancel
+        </button>
+
+        <button class="delete-btn" id="confirmBtn">
+          Delete
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 1. Select the HTML elements
+    const openBtn = document.getElementById("openBtn");
+    const overlay = document.getElementById("overlay");
+    const modal = document.getElementById("modal");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const status = document.getElementById("status");
+
+    // 2. Store the previous focus
+    let previousFocus = null;
+
+    // 3. Find the buttons that can receive focus
+    function getFocusableElements() {
+      return Array.from(
+        modal.querySelectorAll(
+          'button:not([disabled]), a[href], input:not([disabled]), ' +
+          'select:not([disabled]), textarea:not([disabled]), ' +
+          '[tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(function(element) {
+        return element.getClientRects().length > 0;
+      });
+    }
+
+    // 4. Open the modal
+    function openModal() {
+      previousFocus = document.activeElement;
+      overlay.classList.add("show");
+      cancelBtn.focus();
+    }
+
+    // 5. Close the modal
+    function closeModal() {
+      if (!overlay.classList.contains("show")) return;
+
+      overlay.classList.remove("show");
+
+      if (previousFocus) {
+        previousFocus.focus();
+      }
+    }
+
+    // 6. Open button action
+    openBtn.addEventListener("click", function() {
+      status.textContent = "";
+      openModal();
+    });
+
+    // 7. Cancel button action
+    cancelBtn.addEventListener("click", closeModal);
+
+    // 8. Demo delete action
+    confirmBtn.addEventListener("click", function() {
+      closeModal();
+      status.textContent =
+        "Demo: Project deletion confirmed.";
+    });
+
+    // 9. Close when clicking outside the modal
+    overlay.addEventListener("click", function(event) {
+      if (event.target === overlay) {
+        closeModal();
+      }
+    });
+
+    // 10. Keyboard focus trap
+    document.addEventListener("keydown", function(event) {
+      if (!overlay.classList.contains("show")) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusable = getFocusableElements();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (!first) {
+        event.preventDefault();
+        modal.focus();
+        return;
+      }
+
+      if (event.shiftKey &&
+          (document.activeElement === first ||
+           document.activeElement === modal)) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last ||
+         !modal.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  </script>
+
+</body>
+</html>
